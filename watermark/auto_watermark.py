@@ -43,6 +43,7 @@ WATERMARK_MAPPING_NAMES={
     'PF':'watermark.pf.PF',
     'MorphMark':'watermark.morphmark.MorphMark',
     'Adaptive': 'watermark.adaptive.Adaptive',
+    'Ambiguity': 'watermark.ambiguity.Ambiguity',
     "KSEMSTAMP": 'watermark.k_semstamp.KSemStamp',
 }
 

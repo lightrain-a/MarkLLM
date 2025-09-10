@@ -249,17 +249,21 @@ class AmbiguityUtils:
             v_embedding = torch.tensor([t_embedding[i] for i in self.mapping_list], device=self.config.device)
             logits[0] = self.bias_logits(logits[0], v_embedding, self.config.delta_0)
         elif len(ids[0]) > measure_threshold:
-            measure_text = self.config.generation_tokenizer.decode(ids[-1])
-            # Replace entropy with ambiguity calculation
-            ambiguity_score = self.calc_ambiguity(measure_text, self.measure_model, self.measure_tokenizer, self.config.device)
-            if ambiguity_score >= self.config.ambiguity_threshold:
-                embedding = self.embedding_model.encode(measure_text, convert_to_tensor=True)
-                embedding = embedding.clone().detach()
-                with torch.no_grad():
-                    t_embedding = self.transform_model(embedding).tolist()   # torch([])
-                t_embedding = [1.0 if x>0.0 else 0.0 for x in t_embedding]
-                v_embedding = torch.tensor([t_embedding[i] for i in self.mapping_list], device=self.config.device)
-                logits[0] = self.bias_logits(logits[0], v_embedding, self.config.delta)
+            entropy = self.next_token_entropy_from_logits(original_logits)
+
+            # 2. 只有在“初审”发现问题时，才启动昂贵的“委员会讨论”
+            if entropy >= self.config.entropy_threshold:
+                measure_text = self.config.generation_tokenizer.decode(ids[-1])
+                # Replace entropy with ambiguity calculation
+                ambiguity_score = self.calc_ambiguity(measure_text, self.measure_model, self.measure_tokenizer, self.config.device)
+                if ambiguity_score >= self.config.ambiguity_threshold:
+                    embedding = self.embedding_model.encode(measure_text, convert_to_tensor=True)
+                    embedding = embedding.clone().detach()
+                    with torch.no_grad():
+                        t_embedding = self.transform_model(embedding).tolist()   # torch([])
+                    t_embedding = [1.0 if x>0.0 else 0.0 for x in t_embedding]
+                    v_embedding = torch.tensor([t_embedding[i] for i in self.mapping_list], device=self.config.device)
+                    logits[0] = self.bias_logits(logits[0], v_embedding, self.config.delta)
         return logits
     
 
