@@ -13,8 +13,8 @@
     "delta_0": 1.0,
     "delta": 1.5,
     "seed": 66,
-    "measurement_model": "gpt2-large",
-    "embedding_model": "sentence-transformers/all-mpnet-base-v2",
+    "measurement_model": "/root/model/gpt2-large",
+    "embedding_model": "/root/model/all-mpnet-base-v2",
     "transform_model_path": "watermark/adaptive/model/semantic_mapping_model.pth",
     "transform_model_output_dim": 384
 }
