@@ -8,6 +8,8 @@ from ..base import BaseWatermark, BaseConfig
 from .semantic_model import SemanticModel
 from utils.transformers_config import TransformersConfig
 
+print("Loaded ambiguity.py")
+
 class AmbiguityConfig(BaseConfig):
     """Config class for Ambiguity-based watermark algorithm, load config file and initialize parameters."""
 
@@ -16,7 +18,7 @@ class AmbiguityConfig(BaseConfig):
         self.threshold = self.config_dict['threshold']   # threshold for detecting watermark
         self.max_new_tokens = self.config_dict['max_new_tokens']
         self.min_new_tokens = self.config_dict['min_new_tokens']
-        # self.alpha = self.config_dict['alpha']   # threshold for measuring the next token entropy - REMOVED
+        self.alpha = self.config_dict['alpha']   # threshold for measuring the next token entropy - REMOVED
         self.ambiguity_threshold = self.config_dict['ambiguity_threshold']   # threshold for measuring prediction ambiguity using MC Dropout
         self.top_k = self.config_dict['top_k']
         self.top_p = self.config_dict['top_p']
@@ -35,7 +37,7 @@ class AmbiguityConfig(BaseConfig):
     @property
     def algorithm_name(self) -> str:
         """Return the algorithm name."""
-        return 'AmbiguityWatermark'
+        return 'Ambiguity'
     
 
 class AmbiguityUtils:
@@ -249,11 +251,10 @@ class AmbiguityUtils:
             v_embedding = torch.tensor([t_embedding[i] for i in self.mapping_list], device=self.config.device)
             logits[0] = self.bias_logits(logits[0], v_embedding, self.config.delta_0)
         elif len(ids[0]) > measure_threshold:
-            entropy = self.next_token_entropy_from_logits(original_logits)
-
+            measure_text = self.config.generation_tokenizer.decode(ids[-1])
+            measure_entroy = self.next_token_entropy(measure_text, self.measure_model, self.measure_tokenizer, self.config.device)
             # 2. 只有在“初审”发现问题时，才启动昂贵的“委员会讨论”
-            if entropy >= self.config.entropy_threshold:
-                measure_text = self.config.generation_tokenizer.decode(ids[-1])
+            if measure_entroy >= self.config.alpha:         
                 # Replace entropy with ambiguity calculation
                 ambiguity_score = self.calc_ambiguity(measure_text, self.measure_model, self.measure_tokenizer, self.config.device)
                 if ambiguity_score >= self.config.ambiguity_threshold:
@@ -267,7 +268,7 @@ class AmbiguityUtils:
         return logits
     
 
-class AmbiguityWatermark(BaseWatermark):
+class Ambiguity(BaseWatermark):
     """Top-level class for the Ambiguity-based watermark algorithm."""
 
     def __init__(self, ambiguity_config: str | AmbiguityConfig, transformers_config: TransformersConfig | None = None, *args, **kwargs) -> None:

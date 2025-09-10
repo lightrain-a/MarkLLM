@@ -4,6 +4,7 @@
     "min_new_tokens": 200,
     "threshold": 0.8,
     "alpha": 2.0,
+    "ambiguity_threshold": 0.5, 
     "top_k": 50,
     "top_p": 0.9,
     "repetition_penalty": 1.1,
